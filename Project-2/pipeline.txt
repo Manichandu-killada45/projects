@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_REPO = '<your-git-hub-repo>'
+        DEV_TOMCAT_URL = 'http://<DEV-TOMCAT-PUBLIC-IP>:8080/manager/text/deploy?path=/petclinic&update=true'
+        TEST_TOMCAT_URL = 'http://<TEST-TOMCAT-PUBLIC-IP>:8080/manager/text/deploy?path=/petclinic1&update=true'
+        PROD_TOMCAT_URL = 'http://<PROD-TOMCAT-PUBLIC-IP>/manager/text/deploy?path=/petclinic2&update=true'
+        TOMCAT_CREDENTIALS_ID = 'tomcat' // ID for Jenkins credential for Tomcat
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'master', url: "${env.GIT_REPO}"
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Deploy to Development') {
+            steps {
+                script {
+                    if (askYesNo("Deploy to Development?")) {
+                        deployToTomcat(env.DEV_TOMCAT_URL)
+                    } else {
+                        deployToTomcat(env.DEV_TOMCAT_URL)
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Testing') {
+            steps {
+                script {
+                    if (askYesNo("Deploy to Testing?")) {
+                        deployToTomcat(env.TEST_TOMCAT_URL)
+                    } else {
+                        deployToTomcat(env.TEST_TOMCAT_URL)
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                script {
+                    if (askYesNo("Deploy to Production?")) {
+                        deployToTomcat(env.PROD_TOMCAT_URL)
+                    } else {
+                        deployToTomcat(env.PROD_TOMCAT_URL)
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
+
+def deployToTomcat(tomcatUrl) {
+    withCredentials([usernamePassword(credentialsId: "${env.TOMCAT_CREDENTIALS_ID}", passwordVariable: 'TOMCAT_PASSWORD', usernameVariable: 'TOMCAT_USERNAME')]) {
+        sh """
+        curl -u "$TOMCAT_USERNAME:$TOMCAT_PASSWORD" -T target/*.war "$tomcatUrl"
+        """
+    }
+}
+
+def askYesNo(String message) {
+    input message: message, parameters: [choice(choices: ['No', 'Yes'], description: '', name: 'Proceed')]
+    return params.Proceed == 'Yes'
+}
