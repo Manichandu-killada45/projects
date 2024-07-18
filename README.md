@@ -4,4 +4,4 @@ project-2 title : Deployment of an application in three different environment us
 
 project-3 title : Using terraform to configure load-balancer and VPC.
 
-Project-4 title : Deploying a zomato clone applocation through a secured DevSecOps pipeline using dependency checks and quality gates.
+Project-4 title : Deploying a zomato clone application through a secured DevSecOps pipeline using dependency checks and quality gates.
